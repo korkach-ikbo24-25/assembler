@@ -66,3 +66,26 @@ make test
 04: 62 F5 06 00
 assembled 4 command(s) -> out.bin
 ```
+
+## Интерпретатор (этап 3)
+
+```bash
+python -m src.cli examples/copy_array.csv out_copy.bin
+python -m src.interpreter out_copy.bin dump.json --start 0 --end 16
+cat dump.json
+```
+
+Дамп памяти — JSON:
+
+```json
+{
+  "range": {"start": 0, "end": 16},
+  "memory": [11, 22, 33, 44, 0, 0, 0, 0, 11, 22, 33, 44, 0, 0, 0, 0]
+}
+```
+
+Модель памяти:
+
+- `MEMORY_SIZE = 256` байт данных;
+- 8 восьмибитных регистров;
+- память команд (`state.program`) отделена от памяти данных.

@@ -1,0 +1,9 @@
+# Инициализация значений памяти: адреса 0..3
+LOAD_CONST, 1, 11
+STORE_MEM, 1, 2
+LOAD_CONST, 1, 22
+STORE_MEM, 1, 2
+LOAD_CONST, 1, 33
+STORE_MEM, 1, 2
+LOAD_CONST, 1, 44
+STORE_MEM, 1, 2
