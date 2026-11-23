@@ -8,4 +8,6 @@ dist/
 .idea/
 .vscode/
 *.bin
-*.log
+dump*.json
+examples/*.bin
+examples/*.json
