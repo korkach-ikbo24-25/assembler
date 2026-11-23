@@ -2,8 +2,9 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List
+from typing import Callable, Dict, List
 
+from .alu import bitreverse
 from .decoder import DecodedCommand, load_program
 
 MEMORY_SIZE = 256
@@ -33,19 +34,17 @@ class MachineState:
     pc: int = 0
 
 
-def _resolve_address(state: MachineState, field_name: str,
-                     command: DecodedCommand) -> int:
-    """Resolve memory address for commands using registers.
-
-    Address equals register value referenced by the field name.
+def _resolve_address(state: MachineState,
+                     command: DecodedCommand, field_name: str) -> int:
+    """Return memory address stored in register referenced by field.
 
     Args:
         state: Machine state.
-        field_name: Name of field holding register index.
         command: Decoded command.
+        field_name: Name of field holding register index.
 
     Returns:
-        Memory address.
+        Value of that register.
     """
     return state.registers[command.fields[field_name]]
 
@@ -59,7 +58,7 @@ def _exec_load_const(state: MachineState,
 def _exec_load_mem(state: MachineState,
                    command: DecodedCommand) -> None:
     """LOAD_MEM: read memory at reg[C] + offset into reg[D]."""
-    base = _resolve_address(state, "C", command)
+    base = _resolve_address(state, command, "C")
     address = (base + command.fields["B"]) & WORD_MASK
     state.registers[command.fields["D"]] = state.memory[address]
 
@@ -67,14 +66,24 @@ def _exec_load_mem(state: MachineState,
 def _exec_store_mem(state: MachineState,
                     command: DecodedCommand) -> None:
     """STORE_MEM: store reg[B] into memory at address reg[C]."""
-    address = _resolve_address(state, "C", command)
+    address = _resolve_address(state, command, "C")
     state.memory[address] = state.registers[command.fields["B"]] & WORD_MASK
 
 
-HANDLERS = {
+def _exec_bitreverse(state: MachineState,
+                     command: DecodedCommand) -> None:
+    """BITREVERSE: mem[reg[C] + D] = bitreverse(reg[B])."""
+    source = state.registers[command.fields["B"]] & WORD_MASK
+    base = _resolve_address(state, command, "C")
+    address = (base + command.fields["D"]) & WORD_MASK
+    state.memory[address] = bitreverse(source)
+
+
+HANDLERS: Dict[str, Callable[[MachineState, DecodedCommand], None]] = {
     "LOAD_CONST": _exec_load_const,
     "LOAD_MEM": _exec_load_mem,
     "STORE_MEM": _exec_store_mem,
+    "BITREVERSE": _exec_bitreverse,
 }
 
 
@@ -114,7 +123,7 @@ def run(program_path: Path) -> MachineState:
 
 
 def dump_memory(state: MachineState,
-                start: int, end: int) -> Dict[str, List[int]]:
+                start: int, end: int) -> Dict[str, object]:
     """Produce JSON-ready dump of memory slice.
 
     Args:

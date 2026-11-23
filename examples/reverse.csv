@@ -1,0 +1,31 @@
+# ---- inputs ----
+LOAD_CONST, 0, 0
+LOAD_CONST, 1, 176
+STORE_MEM, 1, 0
+
+LOAD_CONST, 0, 1
+LOAD_CONST, 1, 15
+STORE_MEM, 1, 0
+
+LOAD_CONST, 0, 2
+LOAD_CONST, 1, 129
+STORE_MEM, 1, 0
+
+# ---- bitreverse inputs and write to mem[8..10] ----
+# base register C=0, offset D = dst address
+# reg[B] = source value, reg[C] = 0, D = dst
+
+LOAD_CONST, 2, 0     # reg2 = 0 (base for D)
+LOAD_CONST, 3, 0     # reg3 = memory[0] copy
+LOAD_MEM, 0, 0, 3    # reg3 = mem[reg0 + 0] = mem[0]
+BITREVERSE, 3, 2, 8  # mem[reg2 + 8] = bitreverse(reg3) = 13
+
+LOAD_CONST, 3, 0
+LOAD_CONST, 0, 1
+LOAD_MEM, 0, 0, 3    # reg3 = mem[1] = 15
+BITREVERSE, 3, 2, 9  # mem[9] = bitreverse(15) = 240
+
+LOAD_CONST, 3, 0
+LOAD_CONST, 0, 2
+LOAD_MEM, 0, 0, 3    # reg3 = mem[2] = 129
+BITREVERSE, 3, 2, 10 # mem[10] = bitreverse(129) = 129

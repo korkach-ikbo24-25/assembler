@@ -1,4 +1,4 @@
-.PHONY: test run-spec run-vm clean
+.PHONY: test run-spec run-copy run-vm run-alu clean
 
 test:
 	python -m unittest discover -s tests -v
@@ -11,6 +11,10 @@ run-vm: run-copy
 
 run-copy:
 	python -m src.cli examples/copy_array.csv out_copy.bin
+
+run-alu:
+	python -m src.cli examples/bitreverse_demo.csv out_alu.bin
+	python -m src.interpreter out_alu.bin dump_alu.json --start 0 --end 12
 
 clean:
 	rm -f out*.bin dump*.json
