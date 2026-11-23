@@ -1,0 +1,63 @@
+"""Command-line interface for the UVM assembler."""
+
+import argparse
+import sys
+from pathlib import Path
+from typing import List, Optional
+
+from .assembler import (
+    AssembledCommand,
+    assemble_file,
+    commands_to_bytes,
+)
+from .errors import AssemblerError
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    """Create CLI argument parser."""
+    parser = argparse.ArgumentParser(
+        prog="uvm-asm",
+        description="Assembler for the educational virtual machine.",
+    )
+    parser.add_argument("source", type=Path, help="Path to CSV assembly file")
+    parser.add_argument("output", type=Path, help="Path to binary output file")
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Print intermediate representation to stdout",
+    )
+    return parser
+
+
+def _print_intermediate(commands: List[AssembledCommand]) -> None:
+    """Print intermediate representation as field/value lines."""
+    for index, command in enumerate(commands, start=1):
+        print(f"{index:02d}: {command.mnemonic}: {command.as_test_line()}")
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    """Entry point of the assembler CLI.
+
+    Args:
+        argv: Optional list of command-line arguments.
+
+    Returns:
+        Process exit code.
+    """
+    args = _build_parser().parse_args(argv)
+    try:
+        commands = assemble_file(args.source)
+    except (AssemblerError, OSError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    if args.test:
+        _print_intermediate(commands)
+
+    args.output.write_bytes(commands_to_bytes(commands))
+    print(f"assembled {len(commands)} command(s) -> {args.output}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
