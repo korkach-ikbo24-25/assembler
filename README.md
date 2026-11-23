@@ -44,3 +44,25 @@ make test
 03: STORE_MEM: A=1, B=5, C=6
 04: BITREVERSE: A=2, B=3, C=5, D=222
 ```
+
+## Машинный код (этап 2)
+
+- Команда — 4 байта, little-endian.
+- Кодирование вынесено в `src/encoder.py`:
+  `encode_command`, `encode_program`, `format_byte_dump`.
+- Число ассемблированных команд всегда печатается в конце работы CLI.
+- С флагом `--test` печатаются и IR, и байтовый дамп.
+
+Пример вывода:
+
+```
+01: LOAD_CONST: A=31, B=3, C=62
+02: LOAD_MEM: A=18, B=484, C=4, D=0
+03: STORE_MEM: A=1, B=5, C=6
+04: BITREVERSE: A=2, B=3, C=5, D=222
+01: 7F 3E 00 00
+02: 92 3C 20 00
+03: A1 06 00 00
+04: 62 F5 06 00
+assembled 4 command(s) -> out.bin
+```

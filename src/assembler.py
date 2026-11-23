@@ -130,15 +130,14 @@ def assemble_file(source_path: Path) -> List[AssembledCommand]:
 
 
 def commands_to_bytes(commands: List[AssembledCommand]) -> bytes:
-    """Pack assembled commands into little-endian byte stream.
+    """Pack assembled commands into a little-endian byte stream.
 
     Args:
         commands: Assembled commands.
 
     Returns:
-        Bytes of length ``4 * len(commands)``.
+        Bytes ready to be written to the output file.
     """
-    buffer = bytearray()
-    for command in commands:
-        buffer.extend(command.encoded.to_bytes(4, byteorder="little"))
-    return bytes(buffer)
+    from .encoder import encode_program
+
+    return encode_program(commands)

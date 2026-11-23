@@ -8,8 +8,8 @@ from typing import List, Optional
 from .assembler import (
     AssembledCommand,
     assemble_file,
-    commands_to_bytes,
 )
+from .encoder import encode_program, format_byte_dump
 from .errors import AssemblerError
 
 
@@ -24,7 +24,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--test",
         action="store_true",
-        help="Print intermediate representation to stdout",
+        help="Print IR and byte dump to stdout",
     )
     return parser
 
@@ -33,6 +33,12 @@ def _print_intermediate(commands: List[AssembledCommand]) -> None:
     """Print intermediate representation as field/value lines."""
     for index, command in enumerate(commands, start=1):
         print(f"{index:02d}: {command.mnemonic}: {command.as_test_line()}")
+
+
+def _print_byte_dump(commands: List[AssembledCommand]) -> None:
+    """Print machine code as hex byte lines."""
+    for index, line in enumerate(format_byte_dump(commands), start=1):
+        print(f"{index:02d}: {line}")
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -53,8 +59,9 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if args.test:
         _print_intermediate(commands)
+        _print_byte_dump(commands)
 
-    args.output.write_bytes(commands_to_bytes(commands))
+    args.output.write_bytes(encode_program(commands))
     print(f"assembled {len(commands)} command(s) -> {args.output}")
     return 0
 
