@@ -6,14 +6,12 @@ from typing import Dict, Tuple
 OPCODE_BITS = 5
 ADDR_BITS = 3
 CONST_BITS = 8
-OFFSET_BITS = 13
-MEM_OFFSET_BITS = 3
+LOAD_MEM_OFFSET_BITS = 13
+BITREVERSE_OFFSET_BITS = 14
 
 MAX_OPCODE = (1 << OPCODE_BITS) - 1
 MAX_ADDR = (1 << ADDR_BITS) - 1
 MAX_CONST = (1 << CONST_BITS) - 1
-MAX_OFFSET = (1 << OFFSET_BITS) - 1
-MAX_MEM_OFFSET = (1 << MEM_OFFSET_BITS) - 1
 
 
 @dataclass(frozen=True)
@@ -40,7 +38,7 @@ LOAD_CONST = CommandLayout(
 LOAD_MEM = CommandLayout(
     opcode=18,
     fields={
-        "B": (5, MEM_OFFSET_BITS),
+        "B": (5, LOAD_MEM_OFFSET_BITS),
         "C": (19, ADDR_BITS),
         "D": (22, ADDR_BITS),
     },
@@ -59,7 +57,7 @@ BITREVERSE = CommandLayout(
     fields={
         "B": (5, ADDR_BITS),
         "C": (8, ADDR_BITS),
-        "D": (11, OFFSET_BITS),
+        "D": (11, BITREVERSE_OFFSET_BITS),
     },
 )
 
