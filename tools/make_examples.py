@@ -1,26 +1,18 @@
 """Generate example assembly programs for stage 5."""
 
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable
 
-VECTOR_LEN = 6
-BASE_ADDR = 0
-REG_SRC = 0
-REG_VAL = 1
-REG_DST = 2
-EXAMPLES_DIR = Path("examples")
+vector_len = 6
+base_addr = 0
+reg_src = 0
+reg_val = 1
+reg_dst = 2
+examples_dir = Path("examples")
 
 
-def _store_cell(addr: int, value: int) -> List[str]:
-    """Emit commands writing ``value`` into ``mem[addr]``.
-
-    Args:
-        addr: Destination memory address.
-        value: Byte value to store.
-
-    Returns:
-        Lines of assembly.
-    """
+def _store_cell(addr: int, value: int) -> list[str]:
+    """Emit commands writing ``value`` into ``mem[addr]``."""
     return [
         f"LOAD_CONST, 0, {addr}",
         f"LOAD_CONST, 1, {value}",
@@ -28,44 +20,30 @@ def _store_cell(addr: int, value: int) -> List[str]:
     ]
 
 
-def _bitreverse_inplace(addr: int) -> List[str]:
-    """Emit commands reversing the byte at ``mem[addr]`` in place.
-
-    Args:
-        addr: Address of the byte to reverse.
-
-    Returns:
-        Lines of assembly.
-    """
+def _bitreverse_inplace(addr: int) -> list[str]:
+    """Emit commands reversing ``mem[addr]`` in place."""
     return [
-        f"LOAD_CONST, {REG_SRC}, {addr}",
-        f"LOAD_MEM, 0, {REG_SRC}, {REG_VAL}",
-        f"LOAD_CONST, {REG_DST}, {addr}",
-        f"BITREVERSE, {REG_VAL}, {REG_DST}, 0",
+        f"LOAD_CONST, {reg_src}, {addr}",
+        f"LOAD_MEM, 0, {reg_src}, {reg_val}",
+        f"LOAD_CONST, {reg_dst}, {addr}",
+        f"BITREVERSE, {reg_val}, {reg_dst}, 0",
     ]
 
 
-def build_program(values: Iterable[int]) -> List[str]:
-    """Build a program that reverses each vector element in place.
-
-    Args:
-        values: Six input bytes.
-
-    Returns:
-        Assembly lines (header comment included).
-    """
+def build_program(values: Iterable[int]) -> list[str]:
+    """Build a program reversing each vector element in place."""
     values = list(values)
-    if len(values) != VECTOR_LEN:
-        raise ValueError(f"Need exactly {VECTOR_LEN} values")
-    lines = [f"# bitreverse in place over {VECTOR_LEN}-element vector"]
+    if len(values) != vector_len:
+        raise ValueError(f"Need exactly {vector_len} values")
+    lines = [f"# bitreverse in place over {vector_len}-element vector"]
     for offset, value in enumerate(values):
-        lines.extend(_store_cell(BASE_ADDR + offset, value))
-    for offset in range(VECTOR_LEN):
-        lines.extend(_bitreverse_inplace(BASE_ADDR + offset))
+        lines.extend(_store_cell(base_addr + offset, value))
+    for offset in range(vector_len):
+        lines.extend(_bitreverse_inplace(base_addr + offset))
     return lines
 
 
-EXAMPLES = {
+examples = {
     "vector_basic.csv": [176, 15, 129, 1, 2, 3],
     "vector_zeros.csv": [0, 0, 0, 0, 0, 0],
     "vector_ones.csv": [255, 255, 255, 255, 255, 255],
@@ -73,16 +51,12 @@ EXAMPLES = {
 
 
 def main() -> int:
-    """Write all example assembly files to disk.
-
-    Returns:
-        Process exit code.
-    """
-    EXAMPLES_DIR.mkdir(exist_ok=True)
-    for name, values in EXAMPLES.items():
-        path = EXAMPLES_DIR / name
-        path.write_text("\n".join(build_program(values)) + "\n",
-                        encoding="utf-8")
+    """Write all example assembly files to disk."""
+    examples_dir.mkdir(exist_ok=True)
+    for name, values in examples.items():
+        path = examples_dir / name
+        text = "\n".join(build_program(values)) + "\n"
+        path.write_text(text, encoding="utf-8")
         print(f"wrote {path} ({len(values)} values)")
     return 0
 
