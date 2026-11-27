@@ -41,12 +41,10 @@ class VmTest(unittest.TestCase):
     def test_run_copies_array(self) -> None:
         """Array copy program must duplicate values 0..3 to 8..11."""
         program = [
-            # init memory[0..3]
             "LOAD_CONST, 0, 0", "LOAD_CONST, 1, 11", "STORE_MEM, 1, 0",
             "LOAD_CONST, 0, 1", "LOAD_CONST, 1, 22", "STORE_MEM, 1, 0",
             "LOAD_CONST, 0, 2", "LOAD_CONST, 1, 33", "STORE_MEM, 1, 0",
             "LOAD_CONST, 0, 3", "LOAD_CONST, 1, 44", "STORE_MEM, 1, 0",
-            # copy 0..3 -> 8..11
             "LOAD_CONST, 0, 0", "LOAD_CONST, 2, 8",
             "LOAD_MEM, 0, 0, 1", "STORE_MEM, 1, 2",
             "LOAD_CONST, 0, 1", "LOAD_CONST, 2, 9",
