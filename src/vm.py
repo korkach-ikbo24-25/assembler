@@ -2,15 +2,17 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Dict, List
+from typing import Callable
 
 from .alu import bitreverse
 from .decoder import DecodedCommand, load_program
 
-MEMORY_SIZE = 256
-WORD_BITS = 8
-WORD_MASK = (1 << WORD_BITS) - 1
-REGISTER_COUNT = 8
+memory_size = 256
+word_bits = 8
+word_mask = (1 << word_bits) - 1
+register_count = 8
+
+Handler = Callable[["MachineState", DecodedCommand], None]
 
 
 @dataclass
@@ -18,68 +20,61 @@ class MachineState:
     """State of the UVM: instruction memory and data memory.
 
     Attributes:
-        program: Loaded decoded instructions.
-        memory: Data memory of ``MEMORY_SIZE`` bytes.
+        program: Decoded instructions.
+        memory: Data memory of ``memory_size`` bytes.
         registers: Eight general-purpose registers.
         pc: Program counter.
     """
 
-    program: List[DecodedCommand]
+    program: list[DecodedCommand]
     memory: bytearray = field(
-        default_factory=lambda: bytearray(MEMORY_SIZE)
+        default_factory=lambda: bytearray(memory_size)
     )
-    registers: List[int] = field(
-        default_factory=lambda: [0] * REGISTER_COUNT
+    registers: list[int] = field(
+        default_factory=lambda: [0] * register_count
     )
     pc: int = 0
 
 
-def _resolve_address(state: MachineState,
-                     command: DecodedCommand, field_name: str) -> int:
-    """Return memory address stored in register referenced by field.
-
-    Args:
-        state: Machine state.
-        command: Decoded command.
-        field_name: Name of field holding register index.
-
-    Returns:
-        Value of that register.
-    """
-    return state.registers[command.fields[field_name]]
+def _reg(state: MachineState, command: DecodedCommand,
+         name: str) -> int:
+    """Return value of register referenced by field ``name``."""
+    return state.registers[command.fields[name]]
 
 
 def _exec_load_const(state: MachineState,
                      command: DecodedCommand) -> None:
     """LOAD_CONST: write constant into register B."""
-    state.registers[command.fields["B"]] = command.fields["C"] & WORD_MASK
+    state.registers[command.fields["B"]] = (
+        command.fields["C"] & word_mask
+    )
 
 
 def _exec_load_mem(state: MachineState,
                    command: DecodedCommand) -> None:
-    """LOAD_MEM: read memory at reg[C] + offset into reg[D]."""
-    base = _resolve_address(state, command, "C")
-    address = (base + command.fields["B"]) & WORD_MASK
+    """LOAD_MEM: reg[D] = mem[reg[C] + B]."""
+    address = (_reg(state, command, "C") + command.fields["B"])
     state.registers[command.fields["D"]] = state.memory[address]
 
 
 def _exec_store_mem(state: MachineState,
                     command: DecodedCommand) -> None:
-    """STORE_MEM: store reg[B] into memory at address reg[C]."""
-    address = _resolve_address(state, command, "C")
-    state.memory[address] = state.registers[command.fields["B"]] & WORD_MASK
+    """STORE_MEM: mem[reg[C]] = reg[B]."""
+    address = _reg(state, command, "C")
+    state.memory[address] = (
+        state.registers[command.fields["B"]] & word_mask
+    )
 
 
 def _exec_bitreverse(state: MachineState,
                      command: DecodedCommand) -> None:
     """BITREVERSE: mem[reg[C] + D] = bitreverse(reg[B])."""
-    source = state.registers[command.fields["B"]] & WORD_MASK
-    base = _resolve_address(state, command, "C")
-    address = (base + command.fields["D"]) & WORD_MASK
+    source = state.registers[command.fields["B"]] & word_mask
+    address = _reg(state, command, "C") + command.fields["D"]
     state.memory[address] = bitreverse(source)
 
 
-HANDLERS: Dict[str, Callable[[MachineState, DecodedCommand], None]] = {
+handlers: dict[str, Handler] = {
     "LOAD_CONST": _exec_load_const,
     "LOAD_MEM": _exec_load_mem,
     "STORE_MEM": _exec_store_mem,
@@ -88,18 +83,11 @@ HANDLERS: Dict[str, Callable[[MachineState, DecodedCommand], None]] = {
 
 
 def step(state: MachineState) -> bool:
-    """Execute one instruction.
-
-    Args:
-        state: Machine state to mutate.
-
-    Returns:
-        True if instruction was executed, False if program ended.
-    """
+    """Execute one instruction; return False when program ends."""
     if state.pc >= len(state.program):
         return False
     command = state.program[state.pc]
-    handler = HANDLERS.get(command.mnemonic)
+    handler = handlers.get(command.mnemonic)
     if handler is None:
         raise ValueError(f"Unsupported command: {command.mnemonic}")
     handler(state, command)
@@ -108,14 +96,7 @@ def step(state: MachineState) -> bool:
 
 
 def run(program_path: Path) -> MachineState:
-    """Load binary program and execute it to completion.
-
-    Args:
-        program_path: Path to binary file with assembled program.
-
-    Returns:
-        Final machine state.
-    """
+    """Load binary program and execute it to completion."""
     state = MachineState(program=load_program(program_path))
     while step(state):
         pass
@@ -123,18 +104,9 @@ def run(program_path: Path) -> MachineState:
 
 
 def dump_memory(state: MachineState,
-                start: int, end: int) -> Dict[str, object]:
-    """Produce JSON-ready dump of memory slice.
-
-    Args:
-        state: Machine state.
-        start: First address (inclusive).
-        end: Last address (exclusive).
-
-    Returns:
-        Dictionary with address range and byte values.
-    """
-    if not 0 <= start <= end <= MEMORY_SIZE:
+                start: int, end: int) -> dict[str, object]:
+    """Produce a JSON-ready dump of a memory slice."""
+    if not 0 <= start <= end <= memory_size:
         raise ValueError("Invalid dump range")
     return {
         "range": {"start": start, "end": end},
