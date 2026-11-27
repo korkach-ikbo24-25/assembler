@@ -1,69 +1,64 @@
-"""Command specification for the educational virtual machine (UVM)."""
+"""Command specification for the educational virtual machine."""
 
 from dataclasses import dataclass
-from typing import Dict, Tuple
 
-OPCODE_BITS = 5
-ADDR_BITS = 3
-CONST_BITS = 8
-LOAD_MEM_OFFSET_BITS = 13
-BITREVERSE_OFFSET_BITS = 14
-
-MAX_OPCODE = (1 << OPCODE_BITS) - 1
-MAX_ADDR = (1 << ADDR_BITS) - 1
-MAX_CONST = (1 << CONST_BITS) - 1
+opcode_bits = 5
+addr_bits = 3
+const_bits = 8
+load_mem_offset_bits = 13
+bitreverse_offset_bits = 14
 
 
 @dataclass(frozen=True)
 class CommandLayout:
-    """Layout of a single UVM command in terms of bit fields.
+    """Bit layout of a single command.
 
     Attributes:
-        opcode: Numeric opcode written into bits 0..4.
-        fields: Mapping from field name to (shift, width) tuple.
+        opcode: Numeric opcode.
+        fields: Mapping field name -> (shift, width).
     """
 
     opcode: int
-    fields: Dict[str, Tuple[int, int]]
+    fields: dict[str, tuple[int, int]]
 
 
-LOAD_CONST = CommandLayout(
+load_const = CommandLayout(
     opcode=31,
     fields={
-        "B": (5, ADDR_BITS),
-        "C": (8, CONST_BITS),
+        "B": (5, addr_bits),
+        "C": (8, const_bits),
     },
 )
 
-LOAD_MEM = CommandLayout(
+load_mem = CommandLayout(
     opcode=18,
     fields={
-        "B": (5, LOAD_MEM_OFFSET_BITS),
-        "C": (19, ADDR_BITS),
-        "D": (22, ADDR_BITS),
+        "B": (5, load_mem_offset_bits),
+        "C": (19, addr_bits),
+        "D": (22, addr_bits),
     },
 )
 
-STORE_MEM = CommandLayout(
+store_mem = CommandLayout(
     opcode=1,
     fields={
-        "B": (5, ADDR_BITS),
-        "C": (8, ADDR_BITS),
+        "B": (5, addr_bits),
+        "C": (8, addr_bits),
     },
 )
 
-BITREVERSE = CommandLayout(
+bitreverse = CommandLayout(
     opcode=2,
     fields={
-        "B": (5, ADDR_BITS),
-        "C": (8, ADDR_BITS),
-        "D": (11, BITREVERSE_OFFSET_BITS),
+        "B": (5, addr_bits),
+        "C": (8, addr_bits),
+        "D": (11, bitreverse_offset_bits),
     },
 )
 
-OPCODES: Dict[str, CommandLayout] = {
-    "LOAD_CONST": LOAD_CONST,
-    "LOAD_MEM": LOAD_MEM,
-    "STORE_MEM": STORE_MEM,
-    "BITREVERSE": BITREVERSE,
+opcodes: dict[str, CommandLayout] = {
+    "LOAD_CONST": load_const,
+    "LOAD_MEM": load_mem,
+    "STORE_MEM": store_mem,
+    "BITREVERSE": bitreverse,
 }
