@@ -4,9 +4,8 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import List, Optional
 
-from .vm import run, dump_memory
+from .vm import dump_memory, memory_size, run
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -21,20 +20,13 @@ def _build_parser() -> argparse.ArgumentParser:
                         help="Path to JSON memory dump output")
     parser.add_argument("--start", type=int, default=0,
                         help="Dump start address (inclusive)")
-    parser.add_argument("--end", type=int, default=256,
+    parser.add_argument("--end", type=int, default=memory_size,
                         help="Dump end address (exclusive)")
     return parser
 
 
-def main(argv: Optional[List[str]] = None) -> int:
-    """Entry point of the interpreter CLI.
-
-    Args:
-        argv: Optional list of command-line arguments.
-
-    Returns:
-        Process exit code.
-    """
+def main(argv: list[str] | None = None) -> int:
+    """Entry point of the interpreter CLI."""
     args = _build_parser().parse_args(argv)
     try:
         state = run(args.binary)
@@ -43,7 +35,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 
-    args.dump.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    args.dump.write_text(json.dumps(payload, indent=2),
+                         encoding="utf-8")
     print(f"executed {state.pc} command(s) -> {args.dump}")
     return 0
 
