@@ -10,4 +10,4 @@ class ParseError(AssemblerError):
 
 
 class FieldRangeError(AssemblerError):
-    """Raised when a field value does not fit into its bit width."""
+    """Raised when a field does not fit into its bit width."""
